@@ -4,7 +4,6 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: services/serving-cert
     controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: "null"
   name: registeredservices.primaza.io
 spec:
   conversion:
@@ -165,7 +164,6 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: services/serving-cert
     controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: "null"
   name: serviceclasses.primaza.io
 spec:
   conversion:
@@ -603,7 +601,6 @@ kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: services/serving-cert
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: primaza
