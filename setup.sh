@@ -73,9 +73,20 @@ argocd cluster add "$( kubectl config current-context )" \
 
 argocd app create primaza \
 	--repo https://github.com/filariow/primaza-argocd.git \
+	--path cert-manager \
+	--dest-server https://kubernetes.default.svc \
+	--dest-namespace cert-manager \
+	--port-forward \
+	--port-forward-namespace "$ARGOCD_NAMESPACE" \
+	--grpc-web
+
+argocd app create primaza \
+	--repo https://github.com/filariow/primaza-argocd.git \
 	--path primaza \
-	--dest-server https://kuberentes.default.svc \
-	--dest-namespace primaza
+	--dest-server https://kubernetes.default.svc \
+	--port-forward \
+	--port-forward-namespace "$ARGOCD_NAMESPACE" \
+	--grpc-web
 
 # kubectl port-forward svc/argocd-server \
 # 	-n argocd 8080:443 \
