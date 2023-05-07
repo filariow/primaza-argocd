@@ -96,9 +96,24 @@ do
     sleep 10
 done
 
-kubectl config view --flatten -o json --kubeconfig  "$KUBECONFIG_WORKER_INTERNAL" | \
+P2W_KUBECONFIG=$(kubectl config view --flatten -o json --kubeconfig  "$KUBECONFIG_WORKER_INTERNAL" | \
     jq 'del(.users[0].user."client-certificate-data", .users[0].user."client-key-data")' | \
-    jq --arg token "$TOKEN" '.users[0].user = { "token": $token }'
+    jq --arg token "$TOKEN" '.users[0].user = { "token": $token }' | \
+    base64 -w0 -)
+
+cat << EOF | kubectl apply --kubeconfig "$KUBECONFIG" --context "$CLUSTER_MAIN_CONTEXT" -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: primaza-worker
+  namespace: primaza-mytenant
+  labels:
+    primaza.io/tenant: mytenant
+    primaza.io/cluster-environment: worker
+stringData:
+    kubeconfig: $P2W_KUBECONFIG
+    namespace: primaza-mytenant
+EOF
 
 KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd cluster add "$CLUSTER_WORKER_CONTEXT" \
