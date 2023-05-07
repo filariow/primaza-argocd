@@ -1,0 +1,12 @@
+apiVersion: primaza.io/v1alpha1
+kind: ClusterEnvironment
+metadata:
+    name: worker
+    namespace: primaza-mytenant
+spec:
+    environmentName: dev
+    clusterContextSecret: primaza-worker
+    applicationNamespaces:
+    - applications
+    serviceNamespaces:
+    - services
