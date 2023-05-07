@@ -88,7 +88,7 @@ argocd app create main-cert-manager \
 
 argocd app create primaza \
     --repo https://github.com/filariow/primaza-argocd.git \
-    --path primaza \
+    --path primaza/mytenant \
     --dest-server https://kubernetes.default.svc \
     --kube-context "$CLUSTER_MAIN_CONTEXT" \
     --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
