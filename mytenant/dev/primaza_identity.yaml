@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: primaza-mytenant-worker
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: primaza-token-worker-mytenant
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account-name: primaza-mytenant-worker
+type: kubernetes.io/service-account-token

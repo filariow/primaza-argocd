@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: primaza:controlplane:svc
+  namespace: services
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - ""
+  resourceNames:
+  - primaza-svc-kubeconfig
+  resources:
+  - secrets
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+- apiGroups:
+  - apps
+  resourceNames:
+  - primaza-svc-agent
+  resources:
+  - deployments
+  verbs:
+  - delete
+  - get
+- apiGroups:
+  - primaza.io
+  resources:
+  - serviceclasses
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: primaza:controlplane:svc
+  namespace: services
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: primaza:controlplane:svc
+subjects:
+- kind: ServiceAccount
+  name: primaza-mytenant-worker
+  namespace: kube-system

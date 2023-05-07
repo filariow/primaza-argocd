@@ -1,0 +1,65 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: primaza:controlplane:app
+  namespace: applications
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - ""
+  resourceNames:
+  - primaza-app-kubeconfig
+  resources:
+  - secrets
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+- apiGroups:
+  - apps
+  resourceNames:
+  - primaza-app-agent
+  resources:
+  - deployments
+  verbs:
+  - delete
+  - get
+- apiGroups:
+  - primaza.io
+  resources:
+  - servicebindings
+  - servicecatalogs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: primaza:controlplane:app
+  namespace: applications
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: primaza:controlplane:app
+subjects:
+- kind: ServiceAccount
+  name: primaza-mytenant-worker
+  namespace: kube-system
