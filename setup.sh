@@ -110,22 +110,27 @@ KUBECONFIG=$KUBECONFIG_WI_MI \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
-# sync cert-managers
+    # sync cert-managers
     argocd app sync main-cert-manager worker-cert-manager \
+        --assumeYes \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --retry-limit 3 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
     argocd app wait --sync main-cert-manager worker-cert-manager \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --timeout 600 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
-# sync primaza
+    # sync primaza
     argocd app sync primaza mytenant-dev \
         --assumeYes \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --retry-limit 3 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
     argocd app wait --sync primaza mytenant-dev \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --timeout 600 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 )
