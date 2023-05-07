@@ -68,6 +68,38 @@ KUBECONFIG_WI_MI=/tmp/kc-mvp-primaza-wi-mi
 KUBECONFIG=$KUBECONFIG_WORKER_INTERNAL:$KUBECONFIG_MAIN_INTERNAL \
     kubectl config view --flatten > "$KUBECONFIG_WI_MI"
 
+cat << EOF | kubectl apply --kubeconfig "$KUBECONFIG" --context "$CLUSTER_WORKER_CONTEXT" -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: primaza-mytenant-worker
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: primaza-token-worker-mytenant
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: primaza-mytenant-worker
+type: kubernetes.io/service-account-token
+EOF
+
+until TOKEN=$(kubectl get secrets \
+    primaza-token-worker-mytenant \
+    -n kube-system \
+    --kubeconfig="$KUBECONFIG" \
+    --context "$CLUSTER_WORKER_CONTEXT" \
+    -o jsonpath='{.data.token}' | base64 -d) && [ -n "$TOKEN" ]
+do
+    printf "waiting for token (kube-system/primaza-token-worker-mytenant) to be released...\n"
+    sleep 10
+done
+
+kubectl config view --flatten -o json --kubeconfig  "$KUBECONFIG_WORKER_INTERNAL" | \
+    jq 'del(.users[0].user."client-certificate-data", .users[0].user."client-key-data")' | \
+    jq --arg token "$TOKEN" '.users[0].user = { "token": $token }'
+
 KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd cluster add "$CLUSTER_WORKER_CONTEXT" \
         --kubeconfig "$KUBECONFIG_WI_MI" \
@@ -114,7 +146,7 @@ KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd app sync main-cert-manager worker-cert-manager \
         --assumeYes \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
-        --retry-limit 3 \
+        --retry-limit 6 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
     argocd app wait --sync main-cert-manager worker-cert-manager \
@@ -126,7 +158,7 @@ KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd app sync primaza mytenant-dev \
         --assumeYes \
         --kube-context "$CLUSTER_MAIN_CONTEXT" \
-        --retry-limit 3 \
+        --retry-limit 6 \
         --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
     argocd app wait --sync primaza mytenant-dev \
