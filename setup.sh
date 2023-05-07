@@ -71,7 +71,7 @@ argocd cluster add "$( kubectl config current-context )" \
 	--insecure \
 	--yes
 
-argocd app create primaza \
+argocd app create cert-manager \
 	--repo https://github.com/filariow/primaza-argocd.git \
 	--path cert-manager \
 	--dest-server https://kubernetes.default.svc \

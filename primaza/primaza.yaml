@@ -1544,7 +1544,7 @@ spec:
             configMapKeyRef:
               key: agentapp-image
               name: primaza-primaza-manager-config
-        image: primaza-controller:latest
+        image: ghcr.io/primaza/primaza:latest
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
