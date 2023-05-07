@@ -40,6 +40,12 @@ do
     sleep 5
 done
 
+kubectl wait pod \
+    --for=condition=Ready \
+    -l "app.kubernetes.io/name=argocd-server" \
+    -n "$ARGOCD_NAMESPACE" \
+    --kubeconfig "$KUBECONFIG"
+
 KUBECONFIG=$KUBECONFIG argocd login \
     --username admin \
     --password "$( argocd admin initial-password \
@@ -48,11 +54,6 @@ KUBECONFIG=$KUBECONFIG argocd login \
     --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web \
     --insecure \
     --kube-context "$CLUSTER_MAIN_CONTEXT"
-
-kubectl wait pod \
-    --for=condition=Ready \
-    -l "app.kubernetes.io/name=argocd-server" \
-    -n "$ARGOCD_NAMESPACE"
 
 kind create cluster --name "$CLUSTER_WORKER" --kubeconfig "$KUBECONFIG"
 
@@ -76,42 +77,55 @@ KUBECONFIG=$KUBECONFIG_WI_MI \
         --yes
 
 # create ArgoCD's Applications
-argocd app create main-cert-manager \
-    --repo https://github.com/filariow/primaza-argocd.git \
-    --path cert-manager \
-    --dest-server https://kubernetes.default.svc \
-    --dest-namespace cert-manager \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+(
+    export KUBECONFIG=$KUBECONFIG
 
-argocd app create primaza \
-    --repo https://github.com/filariow/primaza-argocd.git \
-    --path mytenant/primaza \
-    --dest-server https://kubernetes.default.svc \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+    argocd app create main-cert-manager \
+        --repo https://github.com/filariow/primaza-argocd.git \
+        --path cert-manager \
+        --dest-server https://kubernetes.default.svc \
+        --dest-namespace cert-manager \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
-argocd app create worker-cert-manager \
-    --repo https://github.com/filariow/primaza-argocd.git \
-    --path cert-manager \
-    --dest-namespace cert-manager \
-    --dest-name "$CLUSTER_WORKER_CONTEXT" \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+    argocd app create primaza \
+        --repo https://github.com/filariow/primaza-argocd.git \
+        --path mytenant/primaza \
+        --dest-server https://kubernetes.default.svc \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
-argocd app create mytenant-dev \
-    --repo https://github.com/filariow/primaza-argocd.git \
-    --path mytenant/dev/ \
-    --dest-name "$CLUSTER_WORKER_CONTEXT" \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+    argocd app create worker-cert-manager \
+        --repo https://github.com/filariow/primaza-argocd.git \
+        --path cert-manager \
+        --dest-namespace cert-manager \
+        --dest-name "$CLUSTER_WORKER_CONTEXT" \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+
+    argocd app create mytenant-dev \
+        --repo https://github.com/filariow/primaza-argocd.git \
+        --path mytenant/dev/ \
+        --dest-name "$CLUSTER_WORKER_CONTEXT" \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
 # sync cert-managers
-argocd app sync main-cert-manager worker-cert-manager \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+    argocd app sync main-cert-manager worker-cert-manager \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+
+    argocd app wait --sync main-cert-manager worker-cert-manager \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
 
 # sync primaza
-argocd app sync primaza mytenant-dev \
-    --kube-context "$CLUSTER_MAIN_CONTEXT" \
-    --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+    argocd app sync primaza mytenant-dev \
+        --assumeYes \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+
+    argocd app wait --sync primaza mytenant-dev \
+        --kube-context "$CLUSTER_MAIN_CONTEXT" \
+        --port-forward --port-forward-namespace "$ARGOCD_NAMESPACE" --grpc-web
+)
