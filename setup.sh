@@ -67,8 +67,6 @@ KUBECONFIG_WI_MI=/tmp/kc-mvp-primaza-wi-mi
 KUBECONFIG=$KUBECONFIG_WORKER_INTERNAL:$KUBECONFIG_MAIN_INTERNAL \
     kubectl config view --flatten > "$KUBECONFIG_WI_MI"
 
-kubectl config set-context "$CLUSTER_MAIN_CONTEXT" --kubeconfig "$KUBECONFIG_WI_MI"
-
 KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd cluster add "$CLUSTER_WORKER_CONTEXT" \
         --kubeconfig "$KUBECONFIG_WI_MI" \
