@@ -1472,8 +1472,8 @@ subjects:
 ---
 apiVersion: v1
 data:
-  agentapp-image: agentapp:latest
-  agentsvc-image: agentsvc:latest
+  agentapp-image: ghcr.io/primaza/primaza-agentapp:latest
+  agentsvc-image: ghcr.io/primaza/primaza-agentsvc:latest
 kind: ConfigMap
 metadata:
   name: primaza-primaza-manager-config
