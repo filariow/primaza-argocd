@@ -4,6 +4,24 @@
 
 set -e
 
+check_dependency()
+{
+    err=0
+    for i in "$@"
+    do
+        if ! command -v "$i" > /dev/null 
+        then
+            printf "please install %s\n" "$i"
+            ((err+=1))
+        fi
+    done
+
+    [ "$err" -eq "0" ] || exit 1
+}
+
+check_dependency "yq" "jq" "kubectl" "argocd" "kind"
+
+# constants
 ARGOCD_NAMESPACE=argocd
 
 CLUSTER_MAIN=primaza-mvp-main
@@ -14,15 +32,16 @@ KUBECONFIG=/tmp/kc-mvp-primaza
 CLUSTER_MAIN_CONTEXT=kind-$CLUSTER_MAIN
 CLUSTER_WORKER_CONTEXT=kind-$CLUSTER_WORKER
 
+# cleanup
 kind delete clusters "$CLUSTER_MAIN" "$CLUSTER_WORKER"
 
+# create main cluster
 kind create cluster --name "$CLUSTER_MAIN" --kubeconfig "$KUBECONFIG"
 
 # install ArgoCD
 kubectl create namespace "$ARGOCD_NAMESPACE" \
     --kubeconfig "$KUBECONFIG" \
     --context "$CLUSTER_MAIN_CONTEXT"
-
 kubectl apply \
     -n "$ARGOCD_NAMESPACE" \
     -f "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml" \
@@ -55,8 +74,10 @@ KUBECONFIG=$KUBECONFIG argocd login \
     --insecure \
     --kube-context "$CLUSTER_MAIN_CONTEXT"
 
+# create worker cluster
 kind create cluster --name "$CLUSTER_WORKER" --kubeconfig "$KUBECONFIG"
 
+# add worker cluster to ArgoCD
 KUBECONFIG_WORKER_INTERNAL=/tmp/kc-mvp-primaza-worker-internal
 KUBECONFIG_MAIN_INTERNAL=/tmp/kc-mvp-primaza-main-internal
 kind get kubeconfig --name $CLUSTER_MAIN | \
@@ -68,6 +89,7 @@ KUBECONFIG_WI_MI=/tmp/kc-mvp-primaza-wi-mi
 KUBECONFIG=$KUBECONFIG_WORKER_INTERNAL:$KUBECONFIG_MAIN_INTERNAL \
     kubectl config view --flatten > "$KUBECONFIG_WI_MI"
 
+# Setup Primaza user
 cat << EOF | kubectl apply --kubeconfig "$KUBECONFIG" --context "$CLUSTER_WORKER_CONTEXT" -f -
 apiVersion: v1
 kind: ServiceAccount
@@ -121,6 +143,7 @@ stringData:
     namespace: primaza-mytenant
 EOF
 
+# create and setup tenant
 KUBECONFIG=$KUBECONFIG_WI_MI \
     argocd cluster add "$CLUSTER_WORKER_CONTEXT" \
         --kubeconfig "$KUBECONFIG_WI_MI" \
