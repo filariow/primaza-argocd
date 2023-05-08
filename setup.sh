@@ -4,6 +4,7 @@
 
 set -e
 
+# script dependencies
 check_dependency()
 {
     err=0
@@ -121,7 +122,7 @@ done
 P2W_KUBECONFIG=$(kubectl config view --flatten -o json --kubeconfig  "$KUBECONFIG_WORKER_INTERNAL" | \
     jq 'del(.users[0].user."client-certificate-data", .users[0].user."client-key-data")' | \
     jq -c --arg token "$TOKEN" '.users[0].user = { "token": $token }' | \
-    yq -y | base64 -w0 -)
+    yq -P | base64 -w0 -)
 
 cat << EOF | kubectl apply --kubeconfig "$KUBECONFIG" --context "$CLUSTER_MAIN_CONTEXT" -f -
 apiVersion: v1
